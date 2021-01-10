@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.brokers.stub import StubBroker
@@ -46,6 +47,7 @@ class BaseConfig:
             os.environ.get('DEFAULT_STATICMAP', 'False') == 'True'
         ),
     }
+    VERSION = (Path(f'{current_app.root_path}/VERSION')).read_text().strip()
     # ActivityPub
     AP_DOMAIN = UI_URL.replace('https://', '')
 
