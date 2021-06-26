@@ -5,7 +5,7 @@ from flask import Flask
 from fittrackee import email_service
 from fittrackee.emails.email import EmailMessage
 
-from ..api_test_case import CallArgsMixin
+from ..test_case_mixins import CallArgsMixin
 from .template_results.password_reset_request import expected_en_text_body
 
 
