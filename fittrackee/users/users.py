@@ -5,9 +5,12 @@ from typing import Any, Dict, Tuple, Union
 from flask import Blueprint, request, send_file
 from sqlalchemy import exc
 
-from fittrackee import db
-from fittrackee.federation.models import Actor, Domain
-from fittrackee.federation.utils import get_username_and_domain
+from fittrackee import appLog, db
+from fittrackee.federation.exceptions import (
+    ActorNotFoundException,
+    DomainNotFoundException,
+)
+from fittrackee.federation.utils_user import get_user_from_username
 from fittrackee.responses import (
     ForbiddenErrorResponse,
     HttpResponse,
@@ -20,9 +23,11 @@ from fittrackee.workouts.models import Workout
 from fittrackee.workouts.utils_files import get_absolute_file_path
 
 from .decorators import authenticate, authenticate_as_admin
-from .exceptions import FollowRequestAlreadyRejectedError
+from .exceptions import (
+    FollowRequestAlreadyRejectedError,
+    UserNotFoundException,
+)
 from .models import User
-from .utils_follow import create_follow_request
 
 users_blueprint = Blueprint('users', __name__)
 
@@ -483,29 +488,19 @@ def follow_user(
         'message': f"Follow request to user '{user_name}' is sent.",
     }
 
-    user_name_and_domain = get_username_and_domain(user_name)
-    if user_name_and_domain is None:  # local actor
-        target_user = User.query.filter_by(username=user_name).first()
-    else:  # remote actor
-        name, domain_name = user_name_and_domain.groups()
-        domain = Domain.query.filter_by(name=domain_name).first()
-        if not domain:
-            return UserNotFoundErrorResponse()
-        actor = Actor.query.filter_by(
-            preferred_username=name, domain_id=domain.id
-        ).first()
-        if not actor:
-            return UserNotFoundErrorResponse()
-        target_user = actor.user
+    try:
+        target_user = get_user_from_username(user_name)
+    except (
+        ActorNotFoundException,
+        DomainNotFoundException,
+        UserNotFoundException,
+    ) as e:
+        appLog.error(f'Error when following a user: {e}')
+        return UserNotFoundErrorResponse()
 
-    if target_user:
-        try:
-            create_follow_request(
-                follower_user_id=auth_user_id,
-                followed_user=target_user,
-            )
-        except FollowRequestAlreadyRejectedError:
-            return ForbiddenErrorResponse()
-        return successful_response_dict
-
-    return UserNotFoundErrorResponse()
+    follower_user = User.query.filter_by(id=auth_user_id).first()
+    try:
+        follower_user.send_follow_request_to(target_user)
+    except FollowRequestAlreadyRejectedError:
+        return ForbiddenErrorResponse()
+    return successful_response_dict
