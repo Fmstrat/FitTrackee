@@ -128,6 +128,9 @@ class User(BaseModel):
     # does the week start Monday?
     weekm = db.Column(db.Boolean(50), default=False, nullable=False)
     language = db.Column(db.String(50), nullable=True)
+    manually_approves_followers = db.Column(
+        db.Boolean, default=True, nullable=False
+    )
 
     workouts = db.relationship(
         'Workout', lazy=True, backref=db.backref('user', lazy='joined')
@@ -231,14 +234,28 @@ class User(BaseModel):
             follower_user_id=self.id, followed_user_id=target.id
         )
         db.session.add(follow_request)
+        if not target.manually_approves_followers:
+            follow_request.is_approved = True
+            follow_request.updated_at = datetime.utcnow()
         db.session.commit()
 
-        if current_app.config['federation_enabled'] and target.actor.is_remote:
-            send_to_users_inbox.send(
-                sender_id=self.actor.id,
-                activity=follow_request.get_activity(),
-                recipients=[target.actor.inbox_url],
-            )
+        if current_app.config['federation_enabled']:
+            # send Follow activity to remote followed user
+            if target.actor.is_remote:
+                send_to_users_inbox.send(
+                    sender_id=self.actor.id,
+                    activity=follow_request.get_activity(),
+                    recipients=[target.actor.inbox_url],
+                )
+
+            # send Accept activity to remote follower user if local followed
+            # user accepts follow requests automatically
+            if self.actor.is_remote and not target.manually_approves_followers:
+                send_to_users_inbox.send(
+                    sender_id=target.actor.id,
+                    activity=follow_request.get_activity(),
+                    recipients=[self.actor.inbox_url],
+                )
 
         return follow_request
 
@@ -262,6 +279,7 @@ class User(BaseModel):
                 activity=follow_request.get_activity(),
                 recipients=[user.actor.inbox_url],
             )
+
         return follow_request
 
     def approves_follow_request_from(self, user: 'User') -> FollowRequest:
