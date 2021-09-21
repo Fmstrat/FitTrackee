@@ -49,6 +49,16 @@ python-3.8:
 python-3.9:
   extends: .python
 
+typescript:
+  stage: tests
+  before_script:
+    - apt-get update && apt-get install -y nodejs npm
+    - npm install --global yarn
+    - cd fittrackee_client
+    - yarn install
+  script:
+    - yarn test:unit
+
 firefox:
   stage: selenium
   services:
