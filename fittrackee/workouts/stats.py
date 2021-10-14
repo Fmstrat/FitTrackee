@@ -125,7 +125,6 @@ def get_workouts(
         # Note: There is no use of by_sport anywhere in the application
         if filter_type != 'by_sport':
           for day in workouts_list_by_time:
-            print(workouts_list_by_time[day],flush=True)
             for workoutid in workouts_list_by_time[day]:
               workouts_list_by_time[day][workoutid]['total_distance'] = convert_km_to_m(workouts_list_by_time[day][workoutid]['total_distance']) if workouts_list_by_time[day][workoutid]['total_distance'] else None
         # End convert
