@@ -11,7 +11,9 @@ from sqlalchemy.sql.expression import select
 from fittrackee import bcrypt, db
 from fittrackee.workouts.models import Workout
 
+
 from .utils_token import decode_user_token, get_user_token
+from .utils_format import convert_km_to_m
 
 BaseModel: DeclarativeMeta = db.Model
 
@@ -120,7 +122,7 @@ class User(BaseModel):
                 .filter(Workout.user_id == self.id)
                 .first()
             )
-        return {
+        ret = {
             'username': self.username,
             'email': self.email,
             'created_at': self.created_at,
@@ -142,3 +144,7 @@ class User(BaseModel):
             'total_distance': float(total[0]),
             'total_duration': str(total[1]),
         }
+        # Convert for user info on dashboard
+        ret['total_distance'] = convert_km_to_m(ret['total_distance']) if ret['total_distance'] else None
+        # End convert
+        return ret

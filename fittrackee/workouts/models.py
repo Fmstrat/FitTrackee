@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import os
 from typing import Any, Dict, Optional, Union
 from uuid import UUID, uuid4
@@ -15,7 +16,7 @@ from sqlalchemy.types import JSON, Enum
 from fittrackee import db
 
 from .utils_files import get_absolute_file_path
-from .utils_format import convert_in_duration, convert_value_to_integer
+from .utils_format import convert_in_duration, convert_value_to_integer, convert_km_to_m, convert_m_to_ft
 from .utils_id import encode_uuid
 
 BaseModel: DeclarativeMeta = db.Model
@@ -253,6 +254,16 @@ class Workout(BaseModel):
             .order_by(Workout.workout_date.asc())
             .first()
         )
+        # Convert metrics here for Dashboard, Workouts, and Workout Details pages
+        # Does not include bottom chart on Workout Details or any of Statistics or Dashboard page
+        self.distance = decimal.Decimal(convert_km_to_m(float(self.distance))) if self.distance else None
+        self.min_alt = decimal.Decimal(convert_m_to_ft(float(self.min_alt))) if self.min_alt else None
+        self.max_alt = decimal.Decimal(convert_m_to_ft(float(self.max_alt))) if self.max_alt else None
+        self.descent = decimal.Decimal(convert_m_to_ft(float(self.descent))) if self.descent else None
+        self.ascent = decimal.Decimal(convert_m_to_ft(float(self.ascent))) if self.ascent else None
+        self.max_speed = decimal.Decimal(convert_km_to_m(float(self.max_speed))) if self.max_speed else None
+        self.ave_speed = decimal.Decimal(convert_km_to_m(float(self.ave_speed))) if self.ave_speed else None
+        # End convert
         return {
             'id': self.short_id,  # WARNING: client use uuid as id
             'user': self.user.username,
@@ -388,7 +399,7 @@ class WorkoutSegment(BaseModel):
         self.workout_uuid = workout_uuid
 
     def serialize(self) -> Dict:
-        return {
+        ret = {
             'workout_id': encode_uuid(self.workout_uuid),
             'segment_id': self.segment_id,
             'duration': str(self.duration) if self.duration else None,
@@ -402,6 +413,16 @@ class WorkoutSegment(BaseModel):
             'max_speed': float(self.max_speed) if self.max_speed else None,
             'ave_speed': float(self.ave_speed) if self.ave_speed else None,
         }
+        # Convert for dashboard and statistics
+        ret['distance'] = convert_km_to_m(ret['distance']) if ret['distance'] else None
+        ret['min_alt'] = convert_m_to_ft(ret['min_alt']) if ret['min_alt'] else None
+        ret['max_alt'] = convert_m_to_ft(ret['max_alt']) if ret['max_alt'] else None
+        ret['descent'] = convert_m_to_ft(ret['descent']) if ret['descent'] else None
+        ret['ascent'] = convert_m_to_ft(ret['ascent']) if ret['ascent'] else None
+        ret['max_speed'] = convert_km_to_m(ret['max_speed']) if ret['max_speed'] else None
+        ret['ave_speed'] = convert_km_to_m(ret['ave_speed']) if ret['ave_speed'] else None
+        # End convert
+        return ret
 
 
 class Record(BaseModel):
@@ -459,6 +480,9 @@ class Record(BaseModel):
             value = None
         elif self.record_type in ['AS', 'FD', 'MS']:
             value = float(self.value)  # type: ignore
+            # Convert for records on Dashboard
+            value = convert_km_to_m(value) if value else None
+            # End convert
         else:  # 'LD'
             value = str(self.value)  # type: ignore
 
