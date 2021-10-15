@@ -65,7 +65,7 @@ export default class WorkoutsList extends React.PureComponent {
                       <span className="heading-span-absolute">
                         {t('workouts:Distance')}
                       </span>
-                      {Number(workout.distance).toFixed(2)} km
+                      {Number(workout.distance).toFixed(2)} {t('common:km')}
                     </td>
                     <td className="text-right">
                       <span className="heading-span-absolute">
@@ -77,13 +77,13 @@ export default class WorkoutsList extends React.PureComponent {
                       <span className="heading-span-absolute">
                         {t('workouts:Ave. speed')}
                       </span>
-                      {workout.ave_speed} km/h
+                      {workout.ave_speed} {t('common:km')}/h
                     </td>
                     <td className="text-right">
                       <span className="heading-span-absolute">
                         {t('workouts:Max. speed')}
                       </span>
-                      {workout.max_speed} km/h
+                      {workout.max_speed} {t('common:km')}/h
                     </td>
                   </tr>
                 ))}

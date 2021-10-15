@@ -24,8 +24,9 @@ export default function WorkoutSegments(props) {
                     >
                       {t('workouts:segment')} {index + 1}
                     </Link>{' '}
-                    ({t('workouts:distance')}: {segment.distance} km,{' '}
-                    {t('workouts:duration')}: {segment.duration})
+                    ({t('workouts:distance')}: {segment.distance}
+                    {t('common:km')}, {t('workouts:duration')}:{' '}
+                    {segment.duration})
                   </li>
                 ))}
               </ul>

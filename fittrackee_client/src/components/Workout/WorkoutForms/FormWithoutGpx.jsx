@@ -92,7 +92,7 @@ function FormWithoutGpx(props) {
       </div>
       <div className="form-group">
         <label>
-          {t('workouts:Distance')} (km):
+          {t('workouts:Distance')} ({t('common:km')}):
           <input
             name="distance"
             defaultValue={workout ? workout.distance : ''}

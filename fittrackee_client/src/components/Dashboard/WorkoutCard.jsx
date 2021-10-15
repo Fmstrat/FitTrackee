@@ -42,7 +42,7 @@ export default function WorkoutCard(props) {
                 ' - '
               )}
               <i className="fa fa-road" aria-hidden="true" />{' '}
-              {t('workouts:Distance')}: {workout.distance} km
+              {t('workouts:Distance')}: {workout.distance} {t('common:km')}
             </p>
           </div>
         </div>

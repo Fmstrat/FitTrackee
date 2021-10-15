@@ -40,7 +40,7 @@ export default function UserStatistics(props) {
               <div className="huge">
                 {Number(user.total_distance).toFixed(2)}
               </div>
-              <div>km</div>
+              <div>{t('common:km')}</div>
             </div>
           </div>
         </div>

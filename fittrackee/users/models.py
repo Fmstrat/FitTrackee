@@ -13,7 +13,7 @@ from fittrackee.workouts.models import Workout
 
 
 from .utils_token import decode_user_token, get_user_token
-from .utils_format import convert_km_to_m
+from .utils_format import convert_km_to_mi
 
 BaseModel: DeclarativeMeta = db.Model
 
@@ -145,6 +145,6 @@ class User(BaseModel):
             'total_duration': str(total[1]),
         }
         # Convert for user info on dashboard
-        ret['total_distance'] = convert_km_to_m(ret['total_distance']) if ret['total_distance'] else None
+        ret['total_distance'] = convert_km_to_mi(ret['total_distance']) if ret['total_distance'] else None
         # End convert
         return ret

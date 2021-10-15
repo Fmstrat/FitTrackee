@@ -1,6 +1,7 @@
 import { format, subHours } from 'date-fns'
 import togeojson from '@mapbox/togeojson'
 
+import i18n from '../i18n'
 import { getDateWithTZ } from './index'
 
 export const workoutColors = [
@@ -65,10 +66,10 @@ export const formatRecord = (record, tz) => {
   switch (record.record_type) {
     case 'AS':
     case 'MS':
-      value = `${record.value} km/h`
+      value = `${record.value} ${i18n.t('common:km')}/h`
       break
     case 'FD':
-      value = `${record.value} km`
+      value = `${record.value} ${i18n.t('common:km')}`
       break
     default:
       // 'LD'

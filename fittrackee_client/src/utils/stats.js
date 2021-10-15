@@ -8,6 +8,8 @@ import {
   startOfYear,
 } from 'date-fns'
 
+import i18n from '../i18n'
+
 const xAxisFormats = [
   { duration: 'week', dateFormat: 'yyyy-MM-dd', xAxis: 'dd/MM' },
   { duration: 'month', dateFormat: 'yyyy-MM', xAxis: 'MM/yyyy' },
@@ -36,7 +38,7 @@ export const formatValue = (displayedData, value) =>
   value === 0
     ? ''
     : displayedData === 'distance'
-    ? `${value.toFixed(2)} km`
+    ? `${value.toFixed(2)} ${i18n.t('common:km')}`
     : displayedData === 'duration'
     ? formatDuration(value)
     : value
