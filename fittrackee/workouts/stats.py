@@ -17,7 +17,7 @@ from fittrackee.users.models import User
 
 from .models import Sport, Workout
 from .utils import get_datetime_from_request_args, get_upload_dir_size
-from .utils_format import convert_timedelta_to_integer, convert_km_to_mi
+from .utils_format import convert_timedelta_to_integer
 
 stats_blueprint = Blueprint('stats', __name__)
 
@@ -121,14 +121,6 @@ def get_workouts(
                     'total_duration'
                 ] += convert_timedelta_to_integer(workout.moving)
         
-        # Convert for statistics
-        # Note: There is no use of by_sport anywhere in the application
-        if filter_type != 'by_sport':
-          for day in workouts_list_by_time:
-            for workoutid in workouts_list_by_time[day]:
-              workouts_list_by_time[day][workoutid]['total_distance'] = convert_km_to_mi(workouts_list_by_time[day][workoutid]['total_distance']) if workouts_list_by_time[day][workoutid]['total_distance'] else None
-        # End convert
-
         return {
             'status': 'success',
             'data': {

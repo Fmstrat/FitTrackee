@@ -3,6 +3,7 @@ import togeojson from '@mapbox/togeojson'
 
 import i18n from '../i18n'
 import { getDateWithTZ } from './index'
+import { convert } from './conversions'
 
 export const workoutColors = [
   '#55a8a3',
@@ -57,6 +58,9 @@ export const formatChartData = chartData => {
   for (let i = 0; i < chartData.length; i++) {
     chartData[i].time = new Date(chartData[i].time).getTime()
     chartData[i].duration = formatWorkoutDuration(chartData[i].duration)
+    chartData[i].elevation = convert(chartData[i].elevation, i18n.t('common:m'))
+    chartData[i].speed = convert(chartData[i].speed, i18n.t('common:km'))
+    chartData[i].distance = convert(chartData[i].distance, i18n.t('common:km'))
   }
   return chartData
 }
@@ -66,10 +70,14 @@ export const formatRecord = (record, tz) => {
   switch (record.record_type) {
     case 'AS':
     case 'MS':
-      value = `${record.value} ${i18n.t('common:km')}/h`
+      value = `${convert(record.value, i18n.t('common:km'))} ${i18n.t(
+        'common:km'
+      )}/h`
       break
     case 'FD':
-      value = `${record.value} ${i18n.t('common:km')}`
+      value = `${convert(record.value, i18n.t('common:km'))} ${i18n.t(
+        'common:km'
+      )}`
       break
     default:
       // 'LD'

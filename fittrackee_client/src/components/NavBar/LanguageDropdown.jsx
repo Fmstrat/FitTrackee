@@ -12,6 +12,11 @@ export const languages = [
     flag: <EnFlag />,
   },
   {
+    name: 'enUS',
+    selected: false,
+    flag: <EnFlag />,
+  },
+  {
     name: 'fr',
     selected: false,
     flag: <FrFlag />,

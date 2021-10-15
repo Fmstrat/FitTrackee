@@ -37,6 +37,6 @@
   "workouts": "workouts",
   "Yes": "Yes",
   "yes": "yes",
-  "km": "mi",
-  "m": "ft"
+  "km": "km",
+  "m": "m"
 }

@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { convert } from '../../utils/conversions'
 import StaticMap from '../Common/StaticMap'
 import { getDateWithTZ } from '../../utils'
 
@@ -65,7 +66,8 @@ export default class WorkoutsList extends React.PureComponent {
                       <span className="heading-span-absolute">
                         {t('workouts:Distance')}
                       </span>
-                      {Number(workout.distance).toFixed(2)} {t('common:km')}
+                      {convert(workout.distance, t('common:km'))}{' '}
+                      {t('common:km')}
                     </td>
                     <td className="text-right">
                       <span className="heading-span-absolute">
@@ -77,13 +79,15 @@ export default class WorkoutsList extends React.PureComponent {
                       <span className="heading-span-absolute">
                         {t('workouts:Ave. speed')}
                       </span>
-                      {workout.ave_speed} {t('common:km')}/h
+                      {convert(workout.ave_speed, t('common:km'))}{' '}
+                      {t('common:km')}
                     </td>
                     <td className="text-right">
                       <span className="heading-span-absolute">
                         {t('workouts:Max. speed')}
                       </span>
-                      {workout.max_speed} {t('common:km')}/h
+                      {convert(workout.max_speed, t('common:km'))}{' '}
+                      {t('common:km')}
                     </td>
                   </tr>
                 ))}

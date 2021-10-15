@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import StaticMap from '../Common/StaticMap'
 import { getDateWithTZ } from '../../utils'
+import { convert } from '../../utils/conversions'
 
 export default function WorkoutCard(props) {
   const { sports, t, user, workout } = props
@@ -42,7 +43,9 @@ export default function WorkoutCard(props) {
                 ' - '
               )}
               <i className="fa fa-road" aria-hidden="true" />{' '}
-              {t('workouts:Distance')}: {workout.distance} {t('common:km')}
+              {t('workouts:Distance')}:{' '}
+              {convert(workout.distance, t('common:km'))}
+              {t('common:km')}
             </p>
           </div>
         </div>
