@@ -1,11 +1,11 @@
 from datetime import timedelta
+import decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 import gpxpy.gpx
 
 from .exceptions import WorkoutGPXException
 from .utils_weather import get_weather
-
 
 def open_gpx_file(gpx_file: str) -> Optional[gpxpy.gpx.GPX]:
     gpx_file = open(gpx_file, 'r')  # type: ignore
@@ -189,12 +189,13 @@ def get_chart_data(
                 else point.distance_2d(previous_point)
             )
             distance = 0 if distance is None else distance
-            distance += previous_distance
             speed = (
                 round((segment.get_speed(point_idx) / 1000) * 3600, 2)
                 if segment.get_speed(point_idx) is not None
                 else 0
             )
+            elevation = round(point.elevation, 1) if point.elevation is not None else 0
+            distance += previous_distance
             chart_data.append(
                 {
                     'distance': (
@@ -203,11 +204,7 @@ def get_chart_data(
                         else 0
                     ),
                     'duration': point.time_difference(first_point),
-                    'elevation': (
-                        round(point.elevation, 1)
-                        if point.elevation is not None
-                        else 0
-                    ),
+                    'elevation': elevation,
                     'latitude': point.latitude,
                     'longitude': point.longitude,
                     'speed': speed,
