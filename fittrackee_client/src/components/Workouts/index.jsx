@@ -112,8 +112,6 @@ export default withTranslation()(
     }),
     dispatch => ({
       loadWorkouts: params => {
-        console.log('here')
-        console.log(params)
         if (i18n.t('km') === 'mi') {
           if (params.distance_from) {
             params.distance_from = `${convertBack(
@@ -158,7 +156,6 @@ export default withTranslation()(
             )}`
           }
         }
-        console.log(params)
         dispatch(getOrUpdateData('getData', 'workouts', params))
       },
       loadMoreWorkouts: params => {

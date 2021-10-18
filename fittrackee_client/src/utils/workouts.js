@@ -37,7 +37,16 @@ export const formatWorkoutDate = (
   timeFormat = null
 ) => {
   if (!dateFormat) {
-    dateFormat = 'yyyy/MM/dd'
+    if (i18n.t('km') === 'mi') {
+      dateFormat = 'MM/dd/yyyy'
+    } else {
+      dateFormat = 'yyyy/MM/dd'
+    }
+  } else {
+    if (i18n.t('km') === 'mi') {
+      dateFormat = dateFormat.replace('yyyy/MM/dd', 'MM/dd/yyyy')
+      dateFormat = dateFormat.replace('dd/MM/yyyy', 'MM/dd/yyyy')
+    }
   }
   if (!timeFormat) {
     timeFormat = 'HH:mm'

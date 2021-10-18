@@ -1,10 +1,10 @@
-import { format } from 'date-fns'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { convert } from '../../utils/conversions'
 import StaticMap from '../Common/StaticMap'
 import { getDateWithTZ } from '../../utils'
+import { formatWorkoutDate } from '../../utils/workouts'
 
 export default class WorkoutsList extends React.PureComponent {
   render() {
@@ -57,10 +57,12 @@ export default class WorkoutsList extends React.PureComponent {
                       <span className="heading-span-absolute">
                         {t('workouts:Date')}
                       </span>
-                      {format(
-                        getDateWithTZ(workout.workout_date, user.timezone),
-                        'dd/MM/yyyy HH:mm'
-                      )}
+                      {
+                        formatWorkoutDate(
+                          getDateWithTZ(workout.workout_date, user.timezone),
+                          'dd/MM/yyyy HH:mm'
+                        ).workout_date
+                      }
                     </td>
                     <td className="text-right">
                       <span className="heading-span-absolute">
