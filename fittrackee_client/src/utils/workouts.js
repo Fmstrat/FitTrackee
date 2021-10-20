@@ -1,9 +1,12 @@
 import { format, subHours } from 'date-fns'
 import togeojson from '@mapbox/togeojson'
+// import merge from '@mapbox/geojson-merge'
 
 import i18n from '../i18n'
 import { getDateWithTZ } from './index'
 import { convert } from './conversions'
+
+const geojsonMerge = require('@mapbox/geojson-merge')
 
 export const workoutColors = [
   '#55a8a3',
@@ -30,6 +33,8 @@ export const getGeoJson = gpxContent => {
   }
   return { jsonData }
 }
+
+export const mergeGeoJson = gpxArray => geojsonMerge.merge(gpxArray)
 
 export const formatWorkoutDate = (
   dateTime,

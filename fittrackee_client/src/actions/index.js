@@ -45,6 +45,11 @@ export const updateUsersData = data => ({
   data,
 })
 
+export const setGpx = gpxContent => ({
+  type: 'SET_GPX',
+  gpxContent,
+})
+
 export const getOrUpdateData =
   (action, target, data, canDispatch = true) =>
   dispatch => {
@@ -54,6 +59,10 @@ export const getOrUpdateData =
       return dispatch(setError(`${target}|Incorrect id`))
     }
     dispatch(emptyMessages())
+    // console.log('a')
+    // console.log(action)
+    // console.log(target)
+    // console.log(data)
     return FitTrackeeApi[action](target, data)
       .then(ret => {
         if (ret.status === 'success') {
@@ -62,6 +71,9 @@ export const getOrUpdateData =
               return dispatch(
                 setPaginatedData(target, ret.data, ret.pagination)
               )
+            }
+            if (target === 'workouts') {
+              return { target: target, data: ret.data }
             }
             dispatch(setData(target, ret.data))
           } else if (action === 'updateData' && target === 'sports') {
@@ -73,6 +85,51 @@ export const getOrUpdateData =
           dispatch(setError(`${target}|${ret.message || ret.status}`))
         }
         dispatch(setLoading(false))
+      })
+      .then(async w => {
+        if (w) {
+          // for (let i = 0; i < w.data.workouts.length; i++) {
+          //   if (w.data.workouts[i].with_gpx) {
+          //     await new Promise((resolve, reject) => {
+          //       FitTrackeeApi.getData(`workouts/${w.data.workouts[i].id}/gpx`)
+          //         .then(ret => {
+          //           if (ret.status === 'success') {
+          //             w.data.workouts[i].gpx = ret.data.gpx
+          //           } else {
+          //             dispatch(setError(`workouts|${ret.message}`))
+          //             reject()
+          //           }
+          //           resolve()
+          //         })
+          //         .catch(error => dispatch(setError(`workouts|${error}`)))
+          //     })
+          //   }
+          // }
+          let awaits = []
+          // console.log('a')
+          for (let i = 0; i < w.data.workouts.length; i++) {
+            if (w.data.workouts[i].with_gpx) {
+              awaits.push(
+                FitTrackeeApi.getData(`workouts/${w.data.workouts[i].id}/gpx`)
+                  .then(ret => {
+                    // console.log(`b ${i}`)
+                    if (ret.status === 'success') {
+                      w.data.workouts[i].gpx = ret.data.gpx
+                    } else {
+                      dispatch(setError(`workouts|${ret.message}`))
+                    }
+                  })
+                  .catch(error => dispatch(setError(`workouts|${error}`)))
+              )
+            }
+          }
+          // console.log('c')
+          await Promise.all(awaits)
+          // console.log('d')
+          // console.log(w.data)
+          dispatch(setData(w.target, w.data))
+          dispatch(setLoading(false))
+        }
       })
       .catch(error => {
         dispatch(setLoading(false))

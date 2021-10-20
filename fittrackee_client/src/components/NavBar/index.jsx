@@ -57,6 +57,18 @@ class NavBar extends React.PureComponent {
                     <Link
                       className="nav-link"
                       to={{
+                        pathname: '/workouts/fullmap',
+                      }}
+                    >
+                      {t('Map')}
+                    </Link>
+                  </li>
+                )}
+                {isAuthenticated && (
+                  <li className="nav-item">
+                    <Link
+                      className="nav-link"
+                      to={{
                         pathname: '/workouts/statistics',
                       }}
                     >
