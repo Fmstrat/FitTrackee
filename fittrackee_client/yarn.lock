@@ -7179,6 +7179,11 @@
     "lodash" "^4.17.5"
     "webpack-sources" "^1.1.0"
 
+"leaflet-fullscreen@^1.0.2":
+  "integrity" "sha1-CcYcS6xF9jsu4Sav2H5c2XZQ/Bs="
+  "resolved" "https://registry.npmjs.org/leaflet-fullscreen/-/leaflet-fullscreen-1.0.2.tgz"
+  "version" "1.0.2"
+
 "leaflet@^1.7.1":
   "integrity" "sha512-/xwPEBidtg69Q3HlqPdU3DnrXQOvQU/CCHA1tcDQVzOwm91YMYaILjNp7L4Eaw5Z4sOYdbBz6koWyibppd8Zqw=="
   "resolved" "https://registry.npmjs.org/leaflet/-/leaflet-1.7.1.tgz"

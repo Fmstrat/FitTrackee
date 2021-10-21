@@ -2,6 +2,8 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { MapContainer } from 'react-leaflet'
 import { getBounds } from 'geolib'
+import L from 'leaflet'
+import 'leaflet-fullscreen'
 
 import Map from './Map'
 import { convert } from '../../utils/conversions'
@@ -154,6 +156,13 @@ export default class WorkoutsList extends React.PureComponent {
                 zoom={this.state.zoom}
                 bounds={bounds}
                 boundsOptions={{ padding: [10, 10] }}
+                whenCreated={map => {
+                  L.control
+                    .fullscreen({
+                      fullscreenControl: true,
+                    })
+                    .addTo(map)
+                }}
               >
                 <Map
                   bounds={bounds}
