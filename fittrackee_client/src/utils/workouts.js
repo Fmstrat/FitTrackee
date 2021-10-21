@@ -1,4 +1,5 @@
 import { format, subHours } from 'date-fns'
+import { getBounds } from 'geolib'
 import togeojson from '@mapbox/togeojson'
 // import merge from '@mapbox/geojson-merge'
 
@@ -35,6 +36,53 @@ export const getGeoJson = gpxContent => {
 }
 
 export const mergeGeoJson = gpxArray => geojsonMerge.merge(gpxArray)
+
+export const getWorkoutGpxs = workouts => {
+  let gpxArray = []
+  let bounds = []
+  let markers = []
+  let tooltips = []
+  let allBounds = []
+  for (let i = 0; i < workouts.length; i++) {
+    if (workouts[i].gpx) {
+      const { jsonData } = getGeoJson(workouts[i].gpx)
+      gpxArray.push(jsonData)
+      markers.push({
+        workoutId: workouts.id,
+        latitude: workouts[i].bounds[0],
+        longitude: workouts[i].bounds[1],
+      })
+      tooltips.push({
+        workoutId: workouts.id,
+        latitude: workouts[i].bounds[0],
+        longitude: workouts[i].bounds[1],
+      })
+      allBounds.push({
+        latitude: workouts[i].bounds[0],
+        longitude: workouts[i].bounds[1],
+      })
+      allBounds.push({
+        latitude: workouts[i].bounds[2],
+        longitude: workouts[i].bounds[3],
+      })
+    }
+  }
+  // console.log(workouts)
+  let maxBounds
+  if (allBounds.length > 0) {
+    maxBounds = getBounds(allBounds)
+    bounds = [
+      [maxBounds.minLat, maxBounds.minLng],
+      [maxBounds.maxLat, maxBounds.maxLng],
+    ]
+  }
+  return {
+    bounds: bounds,
+    jsonMap: mergeGeoJson(gpxArray),
+    markers: markers,
+    tooltips: tooltips,
+  }
+}
 
 export const formatWorkoutDate = (
   dateTime,

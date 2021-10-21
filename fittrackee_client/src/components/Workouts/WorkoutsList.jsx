@@ -1,14 +1,26 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { MapContainer } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet-fullscreen'
 
+import Map from '../Workout/WorkoutDisplay/Map'
 import { convert } from '../../utils/conversions'
 import StaticMap from '../Common/StaticMap'
 import { getDateWithTZ } from '../../utils'
-import { formatWorkoutDate } from '../../utils/workouts'
+import { formatWorkoutDate, getWorkoutGpxs } from '../../utils/workouts'
 
 export default class WorkoutsList extends React.PureComponent {
+  constructor(props, context) {
+    super(props, context)
+    this.state = {
+      zoom: 13,
+    }
+  }
+
   render() {
-    const { loading, sports, t, user, workouts } = this.props
+    const { loading, sports, t, user, workouts, mapAttribution } = this.props
+    const mapData = getWorkoutGpxs(workouts)
     return (
       <div className="card  workout-card">
         <div className="card-body">
@@ -95,6 +107,29 @@ export default class WorkoutsList extends React.PureComponent {
                 ))}
             </tbody>
           </table>
+          <div>
+            {!loading && mapData && mapData.bounds.length > 0 && (
+              <MapContainer
+                zoom={this.state.zoom}
+                bounds={mapData.bounds}
+                boundsOptions={{ padding: [10, 10] }}
+                whenCreated={map => {
+                  L.control
+                    .fullscreen({
+                      fullscreenControl: true,
+                    })
+                    .addTo(map)
+                }}
+              >
+                <Map
+                  bounds={mapData.bounds}
+                  workouts={workouts}
+                  jsonData={mapData.jsonMap}
+                  mapAttribution={mapAttribution}
+                />
+              </MapContainer>
+            )}
+          </div>
           {loading && <div className="loader" />}
         </div>
       </div>

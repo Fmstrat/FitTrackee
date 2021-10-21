@@ -6,7 +6,6 @@ import './App.css'
 import Admin from './Admin'
 import Workout from './Workout'
 import Workouts from './Workouts'
-import FullMap from './FullMap'
 import CurrentUserProfile from './User/CurrentUserProfile'
 import Dashboard from './Dashboard'
 import Footer from './Footer'
@@ -70,7 +69,6 @@ class App extends React.Component {
           <Route exact path="/profile/edit" component={ProfileEdit} />
           <Route exact path="/profile" component={CurrentUserProfile} />
           <Route exact path="/workouts/history" component={Workouts} />
-          <Route exact path="/workouts/fullmap" component={FullMap} />
           <Route exact path="/workouts/statistics" component={Statistics} />
           <Route exact path="/users/:userName" component={UserProfile} />
           <Route path="/workouts" component={Workout} />
