@@ -67,7 +67,6 @@ export const getWorkoutGpxs = workouts => {
       })
     }
   }
-  // console.log(workouts)
   let maxBounds
   if (allBounds.length > 0) {
     maxBounds = getBounds(allBounds)

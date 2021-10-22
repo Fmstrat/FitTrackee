@@ -24,6 +24,30 @@ export default class WorkoutsList extends React.PureComponent {
     return (
       <div className="card  workout-card">
         <div className="card-body">
+          <div>
+            {!loading && mapData && mapData.bounds.length > 0 && (
+              <MapContainer
+                zoom={this.state.zoom}
+                bounds={mapData.bounds}
+                boundsOptions={{ padding: [10, 10] }}
+                whenCreated={map => {
+                  L.control
+                    .fullscreen({
+                      fullscreenControl: true,
+                    })
+                    .addTo(map)
+                }}
+                style={{ height: 300 }}
+              >
+                <Map
+                  bounds={mapData.bounds}
+                  workouts={workouts}
+                  jsonData={mapData.jsonMap}
+                  mapAttribution={mapAttribution}
+                />
+              </MapContainer>
+            )}
+          </div>
           <table className="table">
             <thead>
               <tr>
@@ -107,29 +131,6 @@ export default class WorkoutsList extends React.PureComponent {
                 ))}
             </tbody>
           </table>
-          <div>
-            {!loading && mapData && mapData.bounds.length > 0 && (
-              <MapContainer
-                zoom={this.state.zoom}
-                bounds={mapData.bounds}
-                boundsOptions={{ padding: [10, 10] }}
-                whenCreated={map => {
-                  L.control
-                    .fullscreen({
-                      fullscreenControl: true,
-                    })
-                    .addTo(map)
-                }}
-              >
-                <Map
-                  bounds={mapData.bounds}
-                  workouts={workouts}
-                  jsonData={mapData.jsonMap}
-                  mapAttribution={mapAttribution}
-                />
-              </MapContainer>
-            )}
-          </div>
           {loading && <div className="loader" />}
         </div>
       </div>

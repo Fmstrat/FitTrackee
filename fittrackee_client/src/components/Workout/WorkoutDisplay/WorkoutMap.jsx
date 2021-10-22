@@ -49,11 +49,6 @@ class WorkoutMap extends React.Component {
       [workout.bounds[0], workout.bounds[1]],
       [workout.bounds[2], workout.bounds[3]],
     ]
-    // console.log('a')
-    // console.log(bounds)
-    // console.log(coordinates)
-    // console.log(jsonData)
-    // console.log(mapAttribution)
     return (
       <div>
         {jsonData && (
