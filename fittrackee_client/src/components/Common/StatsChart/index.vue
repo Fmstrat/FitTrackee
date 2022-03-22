@@ -17,15 +17,6 @@
         <label>
           <input
             type="radio"
-            name="total_ascent"
-            :checked="displayedData === 'total_ascent'"
-            @click="updateDisplayData"
-          />
-          {{ $t('workouts.ASCENT') }}
-        </label>
-        <label>
-          <input
-            type="radio"
             name="total_duration"
             :checked="displayedData === 'total_duration'"
             @click="updateDisplayData"
