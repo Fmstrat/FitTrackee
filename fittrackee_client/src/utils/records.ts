@@ -32,7 +32,7 @@ export const formatRecord = (
       value = `${convertDistance(+record.value, distanceUnitFrom, distanceUnitTo, 3)} ${distanceUnitTo}`
       break
     case 'HA':
-      value = `${convertDistance(+record.value, ascentUnitFrom, ascentUnitTo, 3)} ${ascentUnitTo}`
+      value = `${convertDistance(+record.value, ascentUnitFrom, ascentUnitTo, 2)} ${ascentUnitTo}`
       break
     case 'LD':
       value = record.value
