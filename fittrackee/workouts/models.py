@@ -320,6 +320,7 @@ class Workout(BaseModel):
         cls, user_id: int, sport_id: int, as_integer: Optional[bool] = False
     ) -> Dict:
         record_types_columns = {
+            'AC': 'ascent',  # 'Highest ascent'
             'AS': 'ave_speed',  # 'Average speed'
             'FD': 'distance',  # 'Farthest Distance'
             'LD': 'moving',  # 'Longest Duration'
@@ -475,7 +476,7 @@ class Record(BaseModel):
             return datetime.timedelta(seconds=self._value)
         elif self.record_type in ['AS', 'MS']:
             return float(self._value / 100)
-        else:  # 'FD'
+        else:  # 'FD' or 'AC'
             return float(self._value / 1000)
 
     @value.setter  # type: ignore
@@ -485,7 +486,7 @@ class Record(BaseModel):
     def serialize(self) -> Dict:
         if self.value is None:
             value = None
-        elif self.record_type in ['AS', 'FD', 'MS']:
+        elif self.record_type in ['AC', 'AS', 'FD', 'MS']:
             value = float(self.value)  # type: ignore
         else:  # 'LD'
             value = str(self.value)  # type: ignore

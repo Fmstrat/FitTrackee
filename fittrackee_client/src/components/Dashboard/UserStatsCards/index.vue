@@ -11,6 +11,11 @@
       :text="unitTo === 'mi' ? 'miles' : unitTo"
     />
     <StatCard
+      icon="road"
+      :value="totalAscent"
+      :text="unitTo === 'ft' ? 'feet' : unitTo"
+    />
+    <StatCard
       icon="clock-o"
       :value="totalDuration.days"
       :text="totalDuration.duration"
@@ -44,12 +49,16 @@
   )
   const totalDuration = computed(() => get_duration(userTotalDuration))
   const defaultUnitFrom: TUnit = 'km'
+  const ascentUnitFrom: TUnit = 'm'
   const unitTo: TUnit = user.value.imperial_units
     ? units[defaultUnitFrom].defaultTarget
     : defaultUnitFrom
   const totalDistance = user.value.imperial_units
     ? convertDistance(user.value.total_distance, defaultUnitFrom, unitTo, 2)
     : parseFloat(user.value.total_distance.toFixed(2))
+  const totalAscent = user.value.imperial_units
+    ? convertDistance(user.value.total_ascent, ascentUnitFrom, unitTo, 2)
+    : parseFloat(user.value.total_ascent.toFixed(2))
 
   function get_duration(total_duration: ComputedRef<string>) {
     const duration = total_duration.value.match(/day/g)
