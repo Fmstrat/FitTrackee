@@ -17,8 +17,11 @@ depends_on = None
 
 
 def upgrade():
-    pass
-
+    op.execute(
+        """
+        ALTER TYPE record_types ADD VALUE 'HA';
+        """
+    )
 
 def downgrade():
     pass
