@@ -24,4 +24,12 @@ def upgrade():
     )
 
 def downgrade():
-    pass
+    op.execute("ALTER TYPE record_types RENAME TO record_types_old")
+    op.execute("CREATE TYPE record_types AS ENUM('AS', 'FD', 'LD', 'MS')")
+    op.execute(
+        """
+        ALTER TABLE records ALTER COLUMN record_type TYPE record_types 
+        USING record_type::text::record_types
+    """
+    )
+    op.execute("DROP TYPE record_types_old")
