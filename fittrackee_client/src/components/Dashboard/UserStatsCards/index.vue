@@ -8,17 +8,17 @@
     <StatCard
       icon="road"
       :value="totalDistance"
-      :text="unitTo === 'mi' ? 'miles' : unitTo"
+      :text="distanceUnitTo === 'mi' ? 'miles' : distanceUnitTo"
+    />
+    <StatCard
+      icon="location-arrow"
+      :value="totalAscent"
+      :text="ascentUnitTo === 'ft' ? 'feet' : ascentUnitTo"
     />
     <StatCard
       icon="clock-o"
       :value="totalDuration.days"
       :text="totalDuration.duration"
-    />
-    <StatCard
-      icon="tags"
-      :value="user.nb_sports"
-      :text="$t('workouts.SPORT', user.nb_sports)"
     />
   </div>
 </template>
@@ -43,13 +43,20 @@
     () => props.user.total_duration
   )
   const totalDuration = computed(() => get_duration(userTotalDuration))
-  const defaultUnitFrom: TUnit = 'km'
-  const unitTo: TUnit = user.value.imperial_units
-    ? units[defaultUnitFrom].defaultTarget
-    : defaultUnitFrom
+  const distanceUnitFrom: TUnit = 'km'
+  const distanceUnitTo: TUnit = user.value.imperial_units
+    ? units[distanceUnitFrom].defaultTarget
+    : distanceUnitFrom
   const totalDistance = user.value.imperial_units
-    ? convertDistance(user.value.total_distance, defaultUnitFrom, unitTo, 2)
+    ? convertDistance(user.value.total_distance, distanceUnitFrom, distanceUnitTo, 2)
     : parseFloat(user.value.total_distance.toFixed(2))
+  const ascentUnitFrom: TUnit = 'm'
+  const ascentUnitTo: TUnit = user.value.imperial_units
+    ? units[ascentUnitFrom].defaultTarget
+    : ascentUnitFrom
+  const totalAscent = user.value.imperial_units
+    ? convertDistance(user.value.total_ascent, ascentUnitFrom, ascentUnitTo, 2)
+    : parseFloat(user.value.total_ascent.toFixed(2))
 
   function get_duration(total_duration: ComputedRef<string>) {
     const duration = total_duration.value.match(/day/g)
