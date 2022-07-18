@@ -93,7 +93,10 @@
           {{ $t('admin.UPDATE_USER_EMAIL') }}
         </button>
         <button
-          v-if="authUser.username !== user.username"
+          v-if="
+            authUser.username !== user.username &&
+            appConfig.is_email_sending_enabled
+          "
           @click.prevent="updateDisplayModal('reset')"
         >
           {{ $t('admin.RESET_USER_PASSWORD') }}
@@ -124,6 +127,7 @@
   } from 'vue'
 
   import { AUTH_USER_STORE, ROOT_STORE, USERS_STORE } from '@/store/constants'
+  import { TAppConfig } from '@/types/application'
   import { IAuthUserProfile, IUserProfile } from '@/types/user'
   import { useStore } from '@/use/useStore'
 
@@ -157,7 +161,10 @@
   const errorMessages: ComputedRef<string | string[] | null> = computed(
     () => store.getters[ROOT_STORE.GETTERS.ERROR_MESSAGES]
   )
-  let displayModal: Ref<string> = ref('')
+  const appConfig: ComputedRef<TAppConfig> = computed(
+    () => store.getters[ROOT_STORE.GETTERS.APP_CONFIG]
+  )
+  const displayModal: Ref<string> = ref('')
   const formErrors = ref(false)
   const displayUserEmailForm: Ref<boolean> = ref(false)
   const newUserEmail: Ref<string> = ref('')

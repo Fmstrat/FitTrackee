@@ -1,13 +1,10 @@
-import os
-
 from flask import Flask
 
-from fittrackee.files import get_absolute_file_path
 from fittrackee.users.models import User
 from fittrackee.workouts.models import Sport, Workout
 
 from ..mixins import ApiTestCaseMixin
-from .utils import get_random_short_id, post_an_workout
+from .utils import get_random_short_id, post_a_workout
 
 
 def get_gpx_filepath(workout_id: int) -> str:
@@ -16,10 +13,10 @@ def get_gpx_filepath(workout_id: int) -> str:
 
 
 class TestDeleteWorkoutWithGpx(ApiTestCaseMixin):
-    def test_it_deletes_an_workout_with_gpx(
+    def test_it_deletes_a_workout_with_gpx(
         self, app: Flask, user_1: User, sport_1_cycling: Sport, gpx_file: str
     ) -> None:
-        token, workout_short_id = post_an_workout(app, gpx_file)
+        token, workout_short_id = post_a_workout(app, gpx_file)
         client = app.test_client()
 
         response = client.delete(
@@ -29,7 +26,7 @@ class TestDeleteWorkoutWithGpx(ApiTestCaseMixin):
 
         assert response.status_code == 204
 
-    def test_it_returns_403_when_deleting_an_workout_from_different_user(
+    def test_it_returns_403_when_deleting_a_workout_from_different_user(
         self,
         app: Flask,
         user_1: User,
@@ -37,7 +34,7 @@ class TestDeleteWorkoutWithGpx(ApiTestCaseMixin):
         sport_1_cycling: Sport,
         gpx_file: str,
     ) -> None:
-        _, workout_short_id = post_an_workout(app, gpx_file)
+        _, workout_short_id = post_a_workout(app, gpx_file)
         client, auth_token = self.get_test_client_and_auth_token(
             app, user_2.email
         )
@@ -64,25 +61,49 @@ class TestDeleteWorkoutWithGpx(ApiTestCaseMixin):
         data = self.assert_404(response)
         assert 'not found' in data['status']
 
-    def test_it_returns_500_when_deleting_an_workout_with_gpx_invalid_file(
-        self, app: Flask, user_1: User, sport_1_cycling: Sport, gpx_file: str
+    def test_a_workout_with_gpx_can_be_deleted_if_gpx_file_is_invalid(
+        self,
+        app: Flask,
+        user_1: User,
+        sport_1_cycling: Sport,
+        workout_cycling_user_1: Workout,
     ) -> None:
-        token, workout_short_id = post_an_workout(app, gpx_file)
-        client = app.test_client()
-        gpx_filepath = get_gpx_filepath(1)
-        gpx_filepath = get_absolute_file_path(gpx_filepath)
-        os.remove(gpx_filepath)
-
-        response = client.delete(
-            f'/api/workouts/{workout_short_id}',
-            headers=dict(Authorization=f'Bearer {token}'),
+        workout_cycling_user_1.gpx = self.random_string()
+        client, auth_token = self.get_test_client_and_auth_token(
+            app, user_1.email
         )
 
-        self.assert_500(response)
+        response = client.delete(
+            f'/api/workouts/{workout_cycling_user_1.short_id}',
+            headers=dict(Authorization=f'Bearer {auth_token}'),
+        )
+
+        assert response.status_code == 204
+
+    def test_a_workout_with_gpx_can_be_deleted_if_map_file_is_invalid(
+        self,
+        app: Flask,
+        user_1: User,
+        sport_1_cycling: Sport,
+        workout_cycling_user_1: Workout,
+    ) -> None:
+        map_ip = self.random_string()
+        workout_cycling_user_1.map = self.random_string()
+        workout_cycling_user_1.map_id = map_ip
+        client, auth_token = self.get_test_client_and_auth_token(
+            app, user_1.email
+        )
+
+        response = client.delete(
+            f'/api/workouts/{workout_cycling_user_1.short_id}',
+            headers=dict(Authorization=f'Bearer {auth_token}'),
+        )
+
+        assert response.status_code == 204
 
 
 class TestDeleteWorkoutWithoutGpx(ApiTestCaseMixin):
-    def test_it_deletes_an_workout_wo_gpx(
+    def test_it_deletes_a_workout_wo_gpx(
         self,
         app: Flask,
         user_1: User,
@@ -98,7 +119,7 @@ class TestDeleteWorkoutWithoutGpx(ApiTestCaseMixin):
         )
         assert response.status_code == 204
 
-    def test_it_returns_403_when_deleting_an_workout_from_different_user(
+    def test_it_returns_403_when_deleting_a_workout_from_different_user(
         self,
         app: Flask,
         user_1: User,

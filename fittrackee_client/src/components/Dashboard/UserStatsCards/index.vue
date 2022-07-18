@@ -29,10 +29,10 @@
 
   import StatCard from '@/components/Common/StatCard.vue'
   import { TUnit } from '@/types/units'
-  import { IUserProfile } from '@/types/user'
+  import { IAuthUserProfile } from '@/types/user'
   import { convertDistance, units } from '@/utils/units'
   interface Props {
-    user: IUserProfile
+    user: IAuthUserProfile
   }
   const props = defineProps<Props>()
 
@@ -43,20 +43,15 @@
     () => props.user.total_duration
   )
   const totalDuration = computed(() => get_duration(userTotalDuration))
-  const distanceUnitFrom: TUnit = 'km'
-  const distanceUnitTo: TUnit = user.value.imperial_units
-    ? units[distanceUnitFrom].defaultTarget
-    : distanceUnitFrom
-  const totalDistance = user.value.imperial_units
-    ? convertDistance(user.value.total_distance, distanceUnitFrom, distanceUnitTo, 2)
-    : parseFloat(user.value.total_distance.toFixed(2))
-  const ascentUnitFrom: TUnit = 'm'
-  const ascentUnitTo: TUnit = user.value.imperial_units
-    ? units[ascentUnitFrom].defaultTarget
-    : ascentUnitFrom
-  const totalAscent = user.value.imperial_units
-    ? convertDistance(user.value.total_ascent, ascentUnitFrom, ascentUnitTo, 2)
-    : parseFloat(user.value.total_ascent.toFixed(2))
+  const defaultUnitFrom: TUnit = 'km'
+  const unitTo: TUnit = user.value.imperial_units
+    ? units[defaultUnitFrom].defaultTarget
+    : defaultUnitFrom
+  const totalDistance: ComputedRef<number> = computed(() =>
+    user.value.imperial_units
+      ? convertDistance(user.value.total_distance, defaultUnitFrom, unitTo, 2)
+      : parseFloat(user.value.total_distance.toFixed(2))
+  )
 
   function get_duration(total_duration: ComputedRef<string>) {
     const duration = total_duration.value.match(/day/g)

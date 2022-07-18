@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from io import BytesIO
+from typing import Optional
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
@@ -9,9 +10,10 @@ from freezegun import freeze_time
 
 from fittrackee.users.models import User, UserSportPreference
 from fittrackee.users.utils.token import get_user_token
-from fittrackee.workouts.models import Sport, Workout
+from fittrackee.workouts.models import Sport
 
 from ..mixins import ApiTestCaseMixin
+from ..utils import jsonify_dict
 
 USER_AGENT = (
     'Mozilla/5.0 (X11; Linux x86_64; rv:98.0) Gecko/20100101 Firefox/98.0'
@@ -232,7 +234,16 @@ class TestUserRegistration(ApiTestCaseMixin):
         assert data['status'] == 'success'
         assert 'auth_token' not in data
 
-    def test_it_creates_user_with_inactive_account(self, app: Flask) -> None:
+    @pytest.mark.parametrize(
+        'input_language,expected_language',
+        [('en', 'en'), ('fr', 'fr'), ('invalid', 'en'), (None, 'en')],
+    )
+    def test_it_creates_user_with_inactive_account(
+        self,
+        app: Flask,
+        input_language: Optional[str],
+        expected_language: str,
+    ) -> None:
         client = app.test_client()
         username = self.random_string()
         email = self.random_email()
@@ -244,6 +255,7 @@ class TestUserRegistration(ApiTestCaseMixin):
                     username=username,
                     email=email,
                     password=self.random_string(),
+                    language=input_language,
                 )
             ),
             content_type='application/json',
@@ -253,9 +265,18 @@ class TestUserRegistration(ApiTestCaseMixin):
         assert new_user.email == email
         assert new_user.password is not None
         assert new_user.is_active is False
+        assert new_user.language == expected_language
 
-    def test_it_calls_account_confirmation_email_if_payload_is_valid(
-        self, app: Flask, account_confirmation_email_mock: Mock
+    @pytest.mark.parametrize(
+        'input_language,expected_language',
+        [('en', 'en'), ('fr', 'fr'), ('invalid', 'en'), (None, 'en')],
+    )
+    def test_it_calls_account_confirmation_email_when_payload_is_valid(
+        self,
+        app: Flask,
+        account_confirmation_email_mock: Mock,
+        input_language: Optional[str],
+        expected_language: str,
     ) -> None:
         client = app.test_client()
         email = self.random_email()
@@ -270,6 +291,7 @@ class TestUserRegistration(ApiTestCaseMixin):
                         username=username,
                         email=email,
                         password='12345678',
+                        language=input_language,
                     )
                 ),
                 content_type='application/json',
@@ -278,20 +300,45 @@ class TestUserRegistration(ApiTestCaseMixin):
 
         account_confirmation_email_mock.send.assert_called_once_with(
             {
-                'language': 'en',
+                'language': expected_language,
                 'email': email,
             },
             {
                 'username': username,
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
                 'account_confirmation_url': (
                     'http://0.0.0.0:5000/account-confirmation'
                     f'?token={expected_token}'
                 ),
             },
         )
+
+    def test_it_does_not_call_account_confirmation_email_when_email_sending_is_disabled(  # noqa
+        self,
+        app_wo_email_activation: Flask,
+        account_confirmation_email_mock: Mock,
+    ) -> None:
+        client = app_wo_email_activation.test_client()
+        email = self.random_email()
+        username = self.random_string()
+
+        response = client.post(
+            '/api/auth/register',
+            data=json.dumps(
+                dict(
+                    username=username,
+                    email=email,
+                    password='12345678',
+                )
+            ),
+            content_type='application/json',
+            environ_base={'HTTP_USER_AGENT': USER_AGENT},
+        )
+
+        assert response.status_code == 200
+        account_confirmation_email_mock.send.assert_not_called()
 
     @pytest.mark.parametrize(
         'text_transformation',
@@ -453,9 +500,7 @@ class TestUserProfile(ApiTestCaseMixin):
 
         self.assert_401(response, 'invalid token, please log in again')
 
-    def test_it_returns_user_minimal_profile(
-        self, app: Flask, user_1: User
-    ) -> None:
+    def test_it_returns_user(self, app: Flask, user_1: User) -> None:
         client, auth_token = self.get_test_client_and_auth_token(
             app, user_1.email
         )
@@ -468,92 +513,7 @@ class TestUserProfile(ApiTestCaseMixin):
         assert response.status_code == 200
         data = json.loads(response.data.decode())
         assert data['status'] == 'success'
-        assert data['data'] is not None
-        assert data['data']['username'] == 'test'
-        assert data['data']['email'] == 'test@test.com'
-        assert data['data']['created_at']
-        assert not data['data']['admin']
-        assert data['data']['timezone'] is None
-        assert data['data']['weekm'] is False
-        assert data['data']['imperial_units'] is False
-        assert data['data']['language'] is None
-        assert data['data']['nb_sports'] == 0
-        assert data['data']['nb_workouts'] == 0
-        assert data['data']['records'] == []
-        assert data['data']['sports_list'] == []
-        assert data['data']['total_distance'] == 0
-        assert data['data']['total_duration'] == '0:00:00'
-
-    def test_it_returns_user_full_profile(
-        self, app: Flask, user_1_full: User
-    ) -> None:
-        client, auth_token = self.get_test_client_and_auth_token(
-            app, user_1_full.email
-        )
-
-        response = client.get(
-            '/api/auth/profile',
-            headers=dict(Authorization=f'Bearer {auth_token}'),
-        )
-
-        assert response.status_code == 200
-        data = json.loads(response.data.decode())
-        assert data['status'] == 'success'
-        assert data['data'] is not None
-        assert data['data']['username'] == 'test'
-        assert data['data']['email'] == 'test@test.com'
-        assert data['data']['created_at']
-        assert not data['data']['admin']
-        assert data['data']['first_name'] == 'John'
-        assert data['data']['last_name'] == 'Doe'
-        assert data['data']['birth_date']
-        assert data['data']['bio'] == 'just a random guy'
-        assert data['data']['imperial_units'] is False
-        assert data['data']['location'] == 'somewhere'
-        assert data['data']['timezone'] == 'America/New_York'
-        assert data['data']['weekm'] is False
-        assert data['data']['language'] == 'en'
-        assert data['data']['nb_sports'] == 0
-        assert data['data']['nb_workouts'] == 0
-        assert data['data']['records'] == []
-        assert data['data']['sports_list'] == []
-        assert data['data']['total_distance'] == 0
-        assert data['data']['total_duration'] == '0:00:00'
-
-    def test_it_returns_user_profile_with_workouts(
-        self,
-        app: Flask,
-        user_1: User,
-        sport_1_cycling: Sport,
-        sport_2_running: Sport,
-        workout_cycling_user_1: Workout,
-        workout_running_user_1: Workout,
-    ) -> None:
-        client, auth_token = self.get_test_client_and_auth_token(
-            app, user_1.email
-        )
-
-        response = client.get(
-            '/api/auth/profile',
-            headers=dict(Authorization=f'Bearer {auth_token}'),
-        )
-
-        assert response.status_code == 200
-        data = json.loads(response.data.decode())
-        assert data['status'] == 'success'
-        assert data['data'] is not None
-        assert data['data']['username'] == 'test'
-        assert data['data']['email'] == 'test@test.com'
-        assert data['data']['created_at']
-        assert not data['data']['admin']
-        assert data['data']['timezone'] is None
-        assert data['data']['imperial_units'] is False
-        assert data['data']['nb_sports'] == 2
-        assert data['data']['nb_workouts'] == 2
-        assert len(data['data']['records']) == 8
-        assert data['data']['sports_list'] == [1, 2]
-        assert data['data']['total_distance'] == 22
-        assert data['data']['total_duration'] == '2:40:00'
+        assert data['data'] == jsonify_dict(user_1.serialize(user_1))
 
 
 class TestUserProfileUpdate(ApiTestCaseMixin):
@@ -618,25 +578,7 @@ class TestUserProfileUpdate(ApiTestCaseMixin):
         data = json.loads(response.data.decode())
         assert data['status'] == 'success'
         assert data['message'] == 'user profile updated'
-        assert data['data']['username'] == user_1.username
-        assert data['data']['email'] == user_1.email
-        assert not data['data']['admin']
-        assert data['data']['created_at']
-        assert data['data']['first_name'] == first_name
-        assert data['data']['last_name'] == last_name
-        assert data['data']['birth_date'] == 'Tue, 01 Jan 1980 00:00:00 GMT'
-        assert data['data']['bio'] == bio
-        assert data['data']['imperial_units'] is False
-        assert data['data']['location'] == location
-        assert data['data']['timezone'] is None
-        assert data['data']['weekm'] is False
-        assert data['data']['language'] is None
-        assert data['data']['nb_sports'] == 0
-        assert data['data']['nb_workouts'] == 0
-        assert data['data']['records'] == []
-        assert data['data']['sports_list'] == []
-        assert data['data']['total_distance'] == 0
-        assert data['data']['total_duration'] == '0:00:00'
+        assert data['data'] == jsonify_dict(user_1.serialize(user_1))
 
 
 class TestUserAccountUpdate(ApiTestCaseMixin):
@@ -877,6 +819,36 @@ class TestUserAccountUpdate(ApiTestCaseMixin):
         assert new_email == user_1.email_to_confirm
         assert user_1.confirmation_token is not None
 
+    def test_it_updates_email_when_email_sending_is_disabled(
+        self,
+        app_wo_email_activation: Flask,
+        user_1: User,
+        email_updated_to_current_address_mock: MagicMock,
+        email_updated_to_new_address_mock: MagicMock,
+        password_change_email_mock: MagicMock,
+    ) -> None:
+        client, auth_token = self.get_test_client_and_auth_token(
+            app_wo_email_activation, user_1.email
+        )
+        new_email = 'new.email@example.com'
+
+        response = client.patch(
+            '/api/auth/profile/edit/account',
+            content_type='application/json',
+            data=json.dumps(
+                dict(
+                    email=new_email,
+                    password='12345678',
+                )
+            ),
+            headers=dict(Authorization=f'Bearer {auth_token}'),
+        )
+
+        assert response.status_code == 200
+        assert user_1.email == new_email
+        assert user_1.email_to_confirm is None
+        assert user_1.confirmation_token is None
+
     def test_it_calls_email_updated_to_current_email_send_when_new_email_provided(  # noqa
         self,
         app: Flask,
@@ -911,8 +883,8 @@ class TestUserAccountUpdate(ApiTestCaseMixin):
             {
                 'username': user_1.username,
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
                 'new_email_address': new_email,
             },
         )
@@ -953,8 +925,8 @@ class TestUserAccountUpdate(ApiTestCaseMixin):
             {
                 'username': user_1.username,
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
                 'email_confirmation_url': (
                     f'http://0.0.0.0:5000/email-update?token={expected_token}'
                 ),
@@ -1113,8 +1085,8 @@ class TestUserAccountUpdate(ApiTestCaseMixin):
             {
                 'username': user_1.username,
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
             },
         )
 
@@ -1211,6 +1183,37 @@ class TestUserAccountUpdate(ApiTestCaseMixin):
         email_updated_to_new_address_mock.send.assert_called_once()
         password_change_email_mock.send.assert_called_once()
 
+    def test_it_does_not_calls_all_email_send_when_email_sending_is_disabled(
+        self,
+        app_wo_email_activation: Flask,
+        user_1: User,
+        email_updated_to_current_address_mock: MagicMock,
+        email_updated_to_new_address_mock: MagicMock,
+        password_change_email_mock: MagicMock,
+    ) -> None:
+        client, auth_token = self.get_test_client_and_auth_token(
+            app_wo_email_activation, user_1.email
+        )
+
+        client.patch(
+            '/api/auth/profile/edit/account',
+            content_type='application/json',
+            data=json.dumps(
+                dict(
+                    email='new.email@example.com',
+                    password='12345678',
+                    new_password=self.random_string(),
+                )
+            ),
+            headers=dict(Authorization=f'Bearer {auth_token}'),
+        )
+
+        self.assert_no_emails_sent(
+            email_updated_to_current_address_mock,
+            email_updated_to_new_address_mock,
+            password_change_email_mock,
+        )
+
 
 class TestUserPreferencesUpdate(ApiTestCaseMixin):
     def test_it_returns_error_if_payload_is_empty(
@@ -1245,8 +1248,16 @@ class TestUserPreferencesUpdate(ApiTestCaseMixin):
 
         self.assert_400(response)
 
+    @pytest.mark.parametrize(
+        'input_language,expected_language',
+        [('en', 'en'), ('fr', 'fr'), ('invalid', 'en'), (None, 'en')],
+    )
     def test_it_updates_user_preferences(
-        self, app: Flask, user_1: User
+        self,
+        app: Flask,
+        user_1: User,
+        input_language: Optional[str],
+        expected_language: str,
     ) -> None:
         client, auth_token = self.get_test_client_and_auth_token(
             app, user_1.email
@@ -1259,7 +1270,7 @@ class TestUserPreferencesUpdate(ApiTestCaseMixin):
                 dict(
                     timezone='America/New_York',
                     weekm=True,
-                    language='fr',
+                    language=input_language,
                     imperial_units=True,
                 )
             ),
@@ -1270,25 +1281,8 @@ class TestUserPreferencesUpdate(ApiTestCaseMixin):
         data = json.loads(response.data.decode())
         assert data['status'] == 'success'
         assert data['message'] == 'user preferences updated'
-        assert data['data']['username'] == user_1.username
-        assert data['data']['email'] == user_1.email
-        assert not data['data']['admin']
-        assert data['data']['created_at']
-        assert data['data']['first_name'] is None
-        assert data['data']['last_name'] is None
-        assert data['data']['birth_date'] is None
-        assert data['data']['bio'] is None
-        assert data['data']['imperial_units']
-        assert data['data']['location'] is None
-        assert data['data']['timezone'] == 'America/New_York'
-        assert data['data']['weekm'] is True
-        assert data['data']['language'] == 'fr'
-        assert data['data']['nb_sports'] == 0
-        assert data['data']['nb_workouts'] == 0
-        assert data['data']['records'] == []
-        assert data['data']['sports_list'] == []
-        assert data['data']['total_distance'] == 0
-        assert data['data']['total_duration'] == '0:00:00'
+        assert data['data']['language'] == expected_language
+        assert data['data'] == jsonify_dict(user_1.serialize(user_1))
 
 
 class TestUserSportPreferencesUpdate(ApiTestCaseMixin):
@@ -1770,6 +1764,21 @@ class TestPasswordResetRequest(ApiTestCaseMixin):
 
         self.assert_400(response)
 
+    def test_it_returns_error_when_email_sending_is_disabled(
+        self, app_wo_email_activation: Flask
+    ) -> None:
+        client = app_wo_email_activation.test_client()
+
+        response = client.post(
+            '/api/auth/password/reset-request',
+            data=json.dumps(dict(email='test@test.com')),
+            content_type='application/json',
+        )
+
+        self.assert_404_with_message(
+            response, 'the requested URL was not found on the server'
+        )
+
     def test_it_requests_password_reset_when_user_exists(
         self, app: Flask, user_1: User, user_reset_password_email: Mock
     ) -> None:
@@ -1812,8 +1821,8 @@ class TestPasswordResetRequest(ApiTestCaseMixin):
                     f'http://0.0.0.0:5000/password-reset?token={token}'
                 ),
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
             },
         )
 
@@ -1995,7 +2004,7 @@ class TestPasswordUpdate(ApiTestCaseMixin):
         assert data['status'] == 'success'
         assert data['message'] == 'password updated'
 
-    def test_it_send_email_after_successful_update(
+    def test_it_sends_email_after_successful_update(
         self,
         app: Flask,
         user_1: User,
@@ -2025,10 +2034,33 @@ class TestPasswordUpdate(ApiTestCaseMixin):
             {
                 'username': user_1.username,
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
             },
         )
+
+    def test_it_does_not_send_email_when_email_sending_is_disabled(
+        self,
+        app_wo_email_activation: Flask,
+        user_1: User,
+        password_change_email_mock: MagicMock,
+    ) -> None:
+        token = get_user_token(user_1.id, password_reset=True)
+        client = app_wo_email_activation.test_client()
+
+        client.post(
+            '/api/auth/password/update',
+            data=json.dumps(
+                dict(
+                    token=token,
+                    password=self.random_string(),
+                )
+            ),
+            content_type='application/json',
+            environ_base={'HTTP_USER_AGENT': USER_AGENT},
+        )
+
+        password_change_email_mock.send.assert_not_called()
 
 
 class TestEmailUpdateWitUnauthenticatedUser(ApiTestCaseMixin):
@@ -2235,6 +2267,7 @@ class TestResendAccountConfirmationEmail(ApiTestCaseMixin):
     ) -> None:
         client = app.test_client()
         expected_token = self.random_string()
+        inactive_user.language = 'fr'
 
         with patch('secrets.token_urlsafe', return_value=expected_token):
             client.post(
@@ -2246,17 +2279,32 @@ class TestResendAccountConfirmationEmail(ApiTestCaseMixin):
 
         account_confirmation_email_mock.send.assert_called_once_with(
             {
-                'language': 'en',
+                'language': inactive_user.language,
                 'email': inactive_user.email,
             },
             {
                 'username': inactive_user.username,
                 'fittrackee_url': 'http://0.0.0.0:5000',
-                'operating_system': 'linux',
-                'browser_name': 'firefox',
+                'operating_system': 'Linux',
+                'browser_name': 'Firefox',
                 'account_confirmation_url': (
                     'http://0.0.0.0:5000/account-confirmation'
                     f'?token={expected_token}'
                 ),
             },
+        )
+
+    def test_it_returns_error_if_email_sending_is_disabled(
+        self, app_wo_email_activation: Flask, inactive_user: User
+    ) -> None:
+        client = app_wo_email_activation.test_client()
+
+        response = client.post(
+            '/api/auth/account/resend-confirmation',
+            data=json.dumps(dict(email=inactive_user.email)),
+            content_type='application/json',
+        )
+
+        self.assert_404_with_message(
+            response, 'the requested URL was not found on the server'
         )
